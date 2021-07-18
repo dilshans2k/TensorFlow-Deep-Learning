@@ -12,7 +12,14 @@ import matplotlib.pyplot as plt
 import matplotlib.image as mpimg
 import random
 import os
+import zipfile
   
+#Data Loading
+def unzip_data(filename):
+  zip_ref = zipfile.ZipFile(filename)
+  zip_ref.extract_all()
+  zip_ref
+
 
 #Pre-Processing
 def view_random_images(dirpath, classname):
