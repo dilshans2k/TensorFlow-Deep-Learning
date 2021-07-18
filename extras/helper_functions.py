@@ -2,16 +2,16 @@
 
 
 #Imports
-def imports():
-  import tensorflow as tf
-  import pandas as pd
-  import numpy as np
-  from tensorflow.keras.layers import Dense, Conv2D, MaxPool2D, Flatten
-  from tensorflow.keras.preprocessing.image import ImageDataGenerator
-  import matplotlib.pyplot as plt
-  import matplotlib.image as mpimg
-  import random
-  import os
+
+import tensorflow as tf
+import pandas as pd
+import numpy as np
+from tensorflow.keras.layers import Dense, Conv2D, MaxPool2D, Flatten
+from tensorflow.keras.preprocessing.image import ImageDataGenerator
+import matplotlib.pyplot as plt
+import matplotlib.image as mpimg
+import random
+import os
   
 
 #Pre-Processing
