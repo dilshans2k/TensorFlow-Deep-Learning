@@ -17,7 +17,7 @@ import zipfile
 #Data Loading
 def unzip_data(filename):
   zip_ref = zipfile.ZipFile(filename)
-  zip_ref.extract_all()
+  zip_ref.extractall()
   zip_ref
 
   
