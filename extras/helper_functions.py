@@ -10,7 +10,7 @@ from tensorflow.keras.layers import Dense, Conv2D, MaxPool2D, Flatten
 from tensorflow.keras.preprocessing.image import ImageDataGenerator
 from tensorflow import keras
 from tensorflow.keras import layers
-from tensorflow.keras import preprocessing
+from tensorflow.keras.layers.experimental import preprocessing
 import matplotlib.pyplot as plt
 import matplotlib.image as mpimg
 import random
