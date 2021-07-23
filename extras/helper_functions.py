@@ -6,8 +6,9 @@
 import tensorflow as tf
 import pandas as pd
 import numpy as np
-from tensorflow.keras.layers import Dense, Conv2D, MaxPool2D, Flatten
+from tensorflow.keras.layers import Dense, Conv2D, MaxPool2D, Flatten, GlobalAveragePooling2D
 from tensorflow.keras.preprocessing.image import ImageDataGenerator
+from tensorflow.keras.preprocessing import image_dataset_from_directory
 from tensorflow import keras
 from tensorflow.keras import layers
 from tensorflow.keras.layers.experimental import preprocessing
@@ -57,35 +58,32 @@ def view_random_images(dirpath, classname):
     plt.title(classname)
     plt.axis("off")
     
-    
-def load_and_prep_image(filename, img_shape=224):
-  """
-  Reads an image from filename, turns it into a tensor and
-  reshapes it to (img_shape, img_shape, color_channels)
-  """
-  # Read in the image
-  img = tf.io.read_file(filename)
-  # Decode the read file into a tensor
-  img = tf.image.decode_image(img)
-  #Resize the image
-  img = tf.image.resize(img,size = [img_shape, img_shape])
-  # Rescale the image (get all the values btw 0 and 1)
-  img = img/255.
-  return img
-
-
-def better_prediction_viewing(model, input_image, true_label):
-  img = load_and_prep_image(input_image)
-  prediction = model.predict(tf.expand_dims(img, axis=0))
-  if len(prediction[0]) > 1:
-    pred_label = class_names[tf.argmax(prediction[0])]
-  else:
-    pred_label = class_names[int(tf.round(prediction))]
-  plt.imshow(img)
-  plt.title(f"Prediction: {pred_label}")
-  plt.xlabel(f"Probability: {prediction}")
   
+def cmp_data_aug_image(train_dataset, train_dir):
+  """
+  It will compare a random image taken from train_dir, with its augmented version
+  train_dataset: tf.data.Dataset format, can be obtained from 
+                 tf.keras.preprocessing.image_dataset_from_directory
+  train_dir: path from where images are present
+  """
+  target_class = random.choice(train_dataset.class_names)
+  target_dir = train_dir + '/' + target_class
+  random_image = random.choice(os.listdir(target_dir))
+  random_image_path = target_dir + '/' + random_image
+  print(random_image_path)
 
+  # Read and plot in the random image
+  img = mpimg.imread(random_image_path)
+  plt.imshow(img)
+  plt.title(f"Original Image from class: {target_class}")
+  plt.axis(False)
+
+  # Now let's plot our augmented random image
+  augmented_img = data_augmentation(tf.expand_dims(img, axis=0))
+  plt.figure()
+  plt.imshow(tf.squeeze(augmented_img/255.)) #Invalid shape (1, 553, 440, 3) for image data - squeezed after getting this error
+  plt.title(f"Augmented Image from class: {target_class}")
+  plt.axis(False)
 
  
 ### transfer learning
@@ -127,6 +125,16 @@ def create_tensorboard_callback(dir_name, experiment_name):
   print(f"Saving TensorBoard log files to: {log_dir}")
   return tensorboard_callback
 
+def checkpoint_callback(checkpoint_path = "checkpoints/checkpoint.ckpt"):
+  checkpoint_path = checkpoint_path
+
+  # Create a ModelCheckpoint callback that saves the model's weights only
+  checkpoint_callback = hf.tf.keras.callbacks.ModelCheckpoint(filepath=checkpoint_path,
+                                                            save_weights_only = True,
+                                                            save_best_only = True,
+                                                            save_freq = 'epoch',
+                                                            verbose = 1)
+  return checkpoint_callback
 
 def plot_loss_curves(history):
   pd.DataFrame(history.history)['loss'].plot()
@@ -141,9 +149,72 @@ def plot_loss_curves(history):
   plt.xlabel('epochs')
   plt.ylabel('accuracy')
   plt.legend()
+
+def load_and_prep_image(filename, img_shape=224):
+  """
+  Reads an image from filename, turns it into a tensor and
+  reshapes it to (img_shape, img_shape, color_channels)
+  """
+  # Read in the image
+  img = tf.io.read_file(filename)
+  # Decode the read file into a tensor
+  img = tf.image.decode_image(img)
+  #Resize the image
+  img = tf.image.resize(img,size = [img_shape, img_shape])
+  # Rescale the image (get all the values btw 0 and 1)
+  img = img/255.
+  return img
+
+
+def better_prediction_viewing(model, input_image, true_label):
+  img = load_and_prep_image(input_image)
+  prediction = model.predict(tf.expand_dims(img, axis=0))
+  if len(prediction[0]) > 1:
+    pred_label = class_names[tf.argmax(prediction[0])]
+  else:
+    pred_label = class_names[int(tf.round(prediction))]
+  plt.imshow(img)
+  plt.title(f"Prediction: {pred_label}")
+  plt.xlabel(f"Probability: {prediction}")  
   
+# Let's create a function to compare training histories
+def compare_historys(original_history, new_history, initial_epochs=5):
+  """
+  Compares two TensorFlow History objects.
+  """
+  # Get original history measurements (before fine-tuning)
+  acc = original_history.history['accuracy']
+  loss = original_history.history['loss']
 
+  val_acc = original_history.history['val_accuracy']
+  val_loss = original_history.history['val_loss']
 
+  # Combine original history
+  total_acc = acc + new_history.history['accuracy']
+  total_loss = loss + new_history.history['loss']
+
+  total_val_acc = val_acc + new_history.history['val_accuracy']
+  total_val_loss = val_loss + new_history.history['val_loss']
+
+  # Make plot for accuracy
+  plt.figure(figsize = (8,8))
+  plt.subplot(2,1,1)
+  plt.plot(total_acc,label = 'Training Accuracy')
+  plt.plot(total_val_acc, label = 'Validation Accuracy')
+  plt.plot([initial_epochs-1, initial_epochs-1], plt.ylim(), label="Start Fine tuning")
+  plt.legend(loc = "lower right")
+  plt.title("Training and Validation Accuracy")
+
+  # Make plot for loss
+  plt.figure(figsize = (8,8))
+  plt.subplot(2,1,1)
+  plt.plot(total_loss,label = 'Training Loss')
+  plt.plot(total_val_loss, label = 'Validation Loss')
+  plt.plot([initial_epochs-1, initial_epochs-1], plt.ylim(), label="Start Fine tuning")
+  plt.legend(loc = "upper right")
+  plt.title("Training and Validation Loss")
+
+  
 def get_file_size(file_path):
   size = os.path.getsize(file_path)
   return size
