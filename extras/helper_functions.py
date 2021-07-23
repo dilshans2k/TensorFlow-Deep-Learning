@@ -129,7 +129,7 @@ def checkpoint_callback(checkpoint_path = "checkpoints/checkpoint.ckpt"):
   checkpoint_path = checkpoint_path
 
   # Create a ModelCheckpoint callback that saves the model's weights only
-  checkpoint_callback = hf.tf.keras.callbacks.ModelCheckpoint(filepath=checkpoint_path,
+  checkpoint_callback = tf.keras.callbacks.ModelCheckpoint(filepath=checkpoint_path,
                                                             save_weights_only = True,
                                                             save_best_only = True,
                                                             save_freq = 'epoch',
